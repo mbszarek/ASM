@@ -1,3 +1,4 @@
+;Mateusz Szarek - parser ASM 80x86
 assume cs:kod,ds:dane,ss:stos1
 dane segment
   args db 100 dup ('$')
