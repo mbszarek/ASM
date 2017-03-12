@@ -1,10 +1,10 @@
 assume cs:kod,ds:dane,ss:stos1
 dane segment
-  args db 100 dup ('$');tablica z argumentami
-  argc db 1 ;ilosc argumentow
-  argv db 20 dup (?) ;offsety argumentow
-  err1 db 'Niepoprawna ilosc argumentow!',0ah,0dh,'$';kod pierwszego bledu
-  carg db 0ah,0dh,'Ilosc argumentow: $';napis koncowy
+  args db 100 dup ('$')
+  argc dw 0 ;ilosc argumentow
+  argv dw 20 dup (?) ;offsety argumentow
+  err1 db 'Niepoprawna ilosc argumentow!',0ah,0dh,'$'
+  carg db 0ah,0dh,'Ilosc argumentow: $'
 dane ends
 
 kod segment
@@ -16,17 +16,35 @@ PARS proc
   push dx
   push si
   push di;przekazujemy na stos wartosci pod rejestrem aby po zakonczeniu procedury je zdjac
-  mov bl,byte ptr es:[80h]
-  cmp bl,01h
-  jb error1
+  xor ax,ax
   xor cx,cx
   mov cl,byte ptr es:[80h];przekazujemy do cl ilosc znakow do sparsowania
+  cmp cl,01h
+  jbe error1
   dec cl;usuwamy pierwsza spacje w 81h
   mov si,82h
   mov di,offset args;przekazujemy do rejestru di offset tablicy z argumentami
+parsinit:
+  push di
+  push si
+  push cx
+  mov di,offset args;offset tablicy z argumentami
+  mov cx,ds:[argc];do cx ilosc argumentow
+  add di,ax
+  ;add di,cx
+  add cx,cx;mnozymy razy dwa
+  mov si,offset argv;adres tablicy z offsetami argumentow
+  add si,cx;dodajemy do adresu offsetow argumentow ilosc argumentow*2
+  add di,ds:[argc]
+  mov ds:[si],di
+  inc word ptr ds:[argc];inkrementujemy ilosc argumentow
+  pop cx
+  pop si
+  pop di
 petla:
-  cmp cl,0
+  cmp cl,0 ;jak zero to nie ma co przenosic
   je wypisz;jak juz nie ma argumentow to wypisujemy
+  ;je koniec
   mov dl,byte ptr es:[si];analiza znaku
   inc si;przesuwamy wejscie o jeden
   dec cl;obnizamy o jeden ilosc znakow
@@ -35,19 +53,20 @@ petla:
   cmp bx,1;porownujemy, 1-znak bialy, 0-nie
   je repl;jesli znak jest bialy to skocz do procedury repl
   mov ds:[di],dl;jesli nie jest bialy to po prostu przenies do tablicy
+  inc ax;ile znakow jest
 endpet:
   inc di;idziemy o jeden dalej w tablicy argumentow
   jmp petla;skaczemy dalej do petli
 repl:
-  mov byte ptr ds:[di],0ah;dajemy znak nowej linii
-  inc byte ptr ds:[argc]
-  jmp endpet;dalej do petli
+  ;mov byte ptr ds:[di],0ah;dajemy znak nowej linii
+  inc di;idziemy o jeden dalej w tablicy argumentow
+  jmp parsinit
 whitesign:
   call space
   cmp bx,1
-  je whtsgnext
+  je whtsgret
   call tab
-whtsgnext:;powrot do procedury
+whtsgret:;powrot do procedury
   ret
 space:;sprawdza czy znak to spacja
   cmp dl,20h
@@ -62,16 +81,18 @@ tab:;sprawdza czy znak to tabulator
 tabret:
   ret
 error1:
-  push ax
-  push dx
-  mov dx,offset err1
+  mov dx,offset err1;wypisanie bledu na ekran
   mov ah,09h
   int 21h
+koniec:
+  pop di
+  pop si
   pop dx
+  pop cx
+  pop bx
   pop ax
   jmp fin
 PARS endp
-;-------------------MAIN-------------------
 start:
   mov ax,seg dane
   mov ds,ax
@@ -82,21 +103,32 @@ start:
   xor ax,ax
   call PARS
 wypisz:
-  mov dx,offset args
+  pop di
+  pop si
+  pop dx
+  pop cx
+  pop bx
+  pop ax
+  mov dx,ds:[argv]
+  mov ah,09h
+  int 21h
+  mov dx,ds:[argv+2]
+  mov ah,09h
+  int 21h
+  mov dx,ds:[argv+4]
   mov ah,09h
   int 21h
   mov dx,offset carg
   mov ah,09h
   int 21h
-  mov dl,ds:[argc]
-  add dl,48d
+  mov dx,ds:[argc]
+  add dx,48d
   mov ah,02h
   int 21h
 fin:
   mov ah,4ch
   int 21h
 kod ends
-;-----------------KONIEC---------------
 
 stos1 segment STACK
   db 200 dup (?)
