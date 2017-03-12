@@ -1,10 +1,10 @@
 assume cs:kod,ds:dane,ss:stos1
 dane segment
-  args db 100 dup ('$')
+  args db 100 dup ('$');tablica z argumentami
   argc db 1 ;ilosc argumentow
   argv db 20 dup (?) ;offsety argumentow
-  err1 db 'Niepoprawna ilosc argumentow!',0ah,0dh,'$'
-  carg db 0ah,0dh,'Ilosc argumentow: $'
+  err1 db 'Niepoprawna ilosc argumentow!',0ah,0dh,'$';kod pierwszego bledu
+  carg db 0ah,0dh,'Ilosc argumentow: $';napis koncowy
 dane ends
 
 kod segment
