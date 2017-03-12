@@ -15,7 +15,7 @@ PARS proc
   push cx
   push dx
   push si
-  push di ;przekazujemy na stos wartosci pod rejestrem aby po zakonczeniu procedury je zdjac
+  push di;przekazujemy na stos wartosci pod rejestrem aby po zakonczeniu procedury je zdjac
   mov bl,byte ptr es:[80h]
   cmp bl,01h
   jb error1
