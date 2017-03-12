@@ -71,6 +71,7 @@ error1:
   pop ax
   jmp fin
 PARS endp
+;-------------------MAIN-------------------
 start:
   mov ax,seg dane
   mov ds,ax
@@ -95,6 +96,7 @@ fin:
   mov ah,4ch
   int 21h
 kod ends
+;-----------------KONIEC---------------
 
 stos1 segment STACK
   db 200 dup (?)
