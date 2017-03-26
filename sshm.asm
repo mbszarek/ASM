@@ -60,7 +60,6 @@ parsinit:
   mov di,offset args;offset tablicy z argumentami
   mov cx,ds:[argc];do cx ilosc argumentow
   add di,ax
-  ;add di,cx
   add cx,cx;mnozymy razy dwa
   mov si,offset argv;adres tablicy z offsetami argumentow
   add si,cx;dodajemy do adresu offsetow argumentow ilosc argumentow*2
@@ -73,7 +72,6 @@ parsinit:
 petla:
   cmp cl,0 ;jak zero to nie ma co przenosic
   je koniec;jak juz nie ma argumentow to wypisujemy
-  ;je koniec
   mov dl,byte ptr es:[si];analiza znaku
   inc si;przesuwamy wejscie o jeden
   dec cl;obnizamy o jeden ilosc znakow
@@ -94,7 +92,6 @@ repl:
 	cmp ds:[flaga],1
 	je replws
 replnew:
-  ;mov byte ptr ds:[di],0ah;dajemy znak nowej linii
   mov ds:[flaga],1
   push di
   mov di,offset arglen
@@ -193,7 +190,6 @@ CHECKARG proc
   jb error4
   cmp byte ptr ds:[arglen+1],32
   ja error5
-
   jmp checkkey;skaczemy do sprawdzania poprawnosci argumentow
 error1:;zbyt malo argumentow
   push ax
