@@ -21,7 +21,7 @@ dane segment
   err7 db 'Niedozwolone wartosci w pierwszym argumencie!',0ah,0dh,'$'
   err8 db 'Niedozwolone wartosci w drugim argumencie!',0ah,0dh,'$'
   carg db 0ah,0dh,'Ilosc argumentow: $'
-  chars db ' ','.','o','+','=','*','B','O','X','@','%','&','#','/','^'
+  chars db 0,'.','o','+','=','*','B','O','X','@','%','&','#','/','^'
   topframe db 201,205,205,205,'[M. SZAREK]',205,205,205,187,0ah,0dh,'$'
   botframe db 200,205,205,205,205,'[SSH-ART]',205,205,205,205,188,'$'
 dane ends
