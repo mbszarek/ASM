@@ -282,12 +282,6 @@ bpoint:
   add al,dh
   push ax
   push dx
-  ;mov dl,al
-  ;mov ah,02h
-  ;int 21h
-  ;mov dl,0ah
-  ;mov ah,02h
-  ;int 21h
   pop dx
   pop ax
   mov ds:[si],al
@@ -408,6 +402,9 @@ WALK proc
   mov di,offset key
   mov cx,16
 walkloop:
+  push cx
+  xor cx,cx
+  mov cx,4
   xor ax,ax
   xor bx,bx
   mov al,ds:[di]
@@ -448,8 +445,8 @@ walkbpoint:
   pop bx
   pop ax
   xor ah,ah
-  cmp al,0
-  jne walkloopr
+  loop walkloopr
+  pop cx
   inc di
   loop walkloop
   pop cx
