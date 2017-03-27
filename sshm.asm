@@ -1,4 +1,4 @@
- ;Mateusz Szarek - SSH Fingerprint
+ ;Mateusz Szarek - parser ASM 80x86
 assume cs:kod,ds:dane,ss:stos1
 dane segment
   args db 100 dup ('$')
@@ -21,20 +21,23 @@ dane segment
   err7 db 'Niedozwolone wartosci w pierwszym argumencie!',0ah,0dh,'$'
   err8 db 'Niedozwolone wartosci w drugim argumencie!',0ah,0dh,'$'
   carg db 0ah,0dh,'Ilosc argumentow: $'
-  chars db 0,'.','o','+','=','*','B','O','X','@','%','&','#','/','^'
+  chars db ' ','.','o','+','=','*','B','O','X','@','%','&','#','/','^'
   topframe db 201,205,205,205,'[M. SZAREK]',205,205,205,187,0ah,0dh,'$'
   botframe db 200,205,205,205,205,'[SSH-ART]',205,205,205,205,188,'$'
 dane ends
 
 kod segment
 ;----------PARSER--------
-PARS proc
+PARS proc;procedura parsowania PSP
   push ax
   push bx
   push cx
   push dx
   push si
   push di;przekazujemy na stos wartosci pod rejestrem aby po zakonczeniu procedury je zdjac
+  mov ah,51h;upewniamy sie ze w es mamy adres PSP
+  int 21h
+  mov es,bx
   xor ax,ax
   xor bx,bx
   xor cx,cx
@@ -151,31 +154,7 @@ last:
   pop ax
   jmp wypisuj
 PARS endp
-WYPISZ proc
-  push ax
-  push bx
-  push cx
-  push dx
-  push si
-  mov cx,ds:[argc]
-  mov si,offset argv
-printing:
-  mov dx,ds:[si]
-  mov ah,09h
-  int 21h
-  mov dl,0ah
-  mov ah,02h
-  int 21h
-  add si,2
-  loop printing
-  pop si
-  pop dx
-  pop cx
-  pop bx
-  pop ax
-  ret
-WYPISZ endp
-CHECKARG proc
+CHECKARG proc;sprawdzanie poprawnosci argumentow
   push ax
   push bx
   push cx
@@ -316,7 +295,7 @@ checknum:
   ja error7
   sub dh,48
   jmp bpoint
-error6:
+error6:;niedozwolone wartosci w pierwszym argumencie
   push ax
   push dx
   mov ah,09h
@@ -332,7 +311,7 @@ error6:
   pop ax
   mov ah,4ch
   int 21h
-error7:
+error7:;niedozwolone wartosci w drugim argumencie
   push ax
   push dx
   mov ah,09h
@@ -355,7 +334,7 @@ checkret:
   pop ax
   ret
 CHECKARG endp
-CHECKMOD proc
+CHECKMOD proc;sprawdzanie modyfikacji
   cmp ds:[fmod],1
   je changemod
 modret:
@@ -392,7 +371,7 @@ chng:
   pop cx
   jmp loopend
 CHECKMOD endp
-WALK proc
+WALK proc;wlasciwie glowna funkcja programu - interpretuje liczby i chodzi po tablicy
   push di
   push cx
   mov di,offset key
@@ -485,7 +464,7 @@ mvdr1:
   inc ds:[x]
   jmp walkbpoint
 WALK endp
-REPLBOARD proc
+REPLBOARD proc;procedura zamiany liczb w tablicy na znaki
   push ax
   push bx
   push cx
@@ -540,7 +519,7 @@ toobig:
   mov al,14
   jmp boardloop2
 REPLBOARD endp
-PRINTING proc
+PRINTING proc;procedura wypisujaca ssh fingerprint
   push ax
   push bx
   push cx
