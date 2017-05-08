@@ -633,7 +633,7 @@ COUNTCRC proc
     add di,ds:[tmpcrcval]
     add di,offset crc
     mov cl,8d
-    shr ds:[crcval],cl
+    shl ds:[crcval],cl
     mov dx,ds:[di]
     xor ds:[crcval],dx
     jmp crcbreakpoint
