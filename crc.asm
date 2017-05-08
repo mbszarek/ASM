@@ -32,14 +32,14 @@ dane segment
   rev dw 1  ;odwracana liczba
   bitstorev dw 0  ;ilosc bitow do odwrocenia
   tmprev dw 1 ;zmienna pomocna przy obliczaniu tablicy CRC
-  savebuffer dw 120 dup (0) ;bufor zapisu
+  savebuffer db 120 dup (0) ;bufor zapisu
   savebufferposition dw 1 ;pozycja bufora zapisu
   savebufferchars dw 1  ;ilosc znakow zaladowanych do bufora zapisu
   crcbuffer db 60 dup (0) ;bufor odczytu CRC
   crcbufferposition dw 1  ;pozycja bufora odczytu drugiego pliku
   crcbufferchars dw 1 ;ilosc odczytanych znakow z drugiego pliku
   crcbufferlength dw 1  ;ilosc wczytanych znakow
-  linecounter dw 0  ;numer aktualnie czytanej linii przy wersji sprawdzania CRC
+  linecounter dw 1  ;numer aktualnie czytanej linii przy wersji sprawdzania CRC
   multiplier db 0 ;ilosc bitow do przesuniecia
   numtoprint dw ?
   err1 db 'No arguments!',0ah,0dh,'$'
@@ -403,7 +403,7 @@ READFILE proc
     push dx
     xor ax,ax
     xor cx,cx
-    mov ds:[eof],0
+    mov ds:[eof],0d
     mov ds:[bufferlength],0d
     mov bx,ds:[input1handle]
     mov cx,500d
@@ -414,9 +414,9 @@ READFILE proc
     mov ds:[bufferlength],ax
     cmp ax,0d
     jne endofread
-    mov ds:[eof],1
+    mov ds:[eof],1d
   endofread:
-    mov ds:[bufferposition],offset bufferposition
+    mov ds:[bufferposition],offset buffer
     pop dx
     pop cx
     pop bx
@@ -609,8 +609,6 @@ COUNTCRC proc
     push bx
     push cx
     push dx
-    push si
-    push di
     xor ax,ax
     mov ds:[crcval],ax
     mov ds:[crcval],0ffffh
@@ -646,8 +644,6 @@ COUNTCRC proc
     xor ax,cx
     mov ds:[crcval],ax
     pop ax
-    pop di
-    pop si
     pop dx
     pop cx
     pop bx
@@ -704,8 +700,6 @@ SAVETOFILE proc
     push dx
     mov bx,ds:[input2handle]
     mov cx,ds:[savebufferchars]
-    mov ds:[numtoprint],cx
-    call PRINTNUM
     mov dx,offset savebuffer
     mov ah,40h
     int 21h
@@ -842,50 +836,11 @@ COMPARECRCS proc
     call GETLINE
     call COUNTCRC
     call GETONECRCLINE
-    cmp ds:[eofcrc],1d
-    je endcmp
+    cmp ds:[eofcrc],0d
+    jne endcmp
     call UNCRC
     mov dx,ds:[readcrc]
     mov ax,ds:[crcval]
-    mov ds:[numtoprint],ax
-    call PRINTNUM
-    push ax
-    push dx
-    mov ah,02h
-    mov dl,0ah
-    int 21h
-    pop dx
-    pop ax
-    mov ds:[numtoprint],dx
-    call PRINTNUM
-    push ax
-    push dx
-    mov ah,02h
-    mov dl,0ah
-    int 21h
-    pop dx
-    pop ax
-    push ax
-    push dx
-    mov dl,ds:[eof]
-    add dl,48d
-    mov ah,02h
-    int 21h
-    mov dl,20h
-    mov ah,02h
-    int 21h
-    mov dl,ds:[eofcrc]
-    add dl,48d
-    mov ah,02h
-    int 21h
-    mov dl,20h
-    mov ah,02h
-    int 21h
-    mov dl,0ah
-    mov ah,02h
-    int 21h
-    pop dx
-    pop ax
     cmp dx,ax
     jne mismatch
     inc ds:[linecounter]
@@ -898,7 +853,7 @@ COMPARECRCS proc
     int 21h
   endcmp:
     cmp ds:[eof],0d
-    jne mismatch
+    je mismatch
     pop dx
     pop cx
     pop bx
@@ -948,19 +903,20 @@ SAVEBUF proc
     push bx
     push cx
     push dx
+  buffersaver:
     cmp ds:[savebufferchars],119d
     ja saveit
     call CRCTOSAVE
     mov cx,6d
     mov si,offset crcsavetable
     mov di,ds:[savebufferposition]
-  buffersaver:
+  bufsaver:
     mov al,ds:[si]
     mov ds:[di],al
     inc si
     inc di
     inc ds:[savebufferchars]
-    loop buffersaver
+    loop bufsaver
     mov ds:[savebufferposition],di
     pop dx
     pop cx
@@ -1060,12 +1016,12 @@ PRINTNUM endp
     call FILLCRCTABLE
     call MODIFICATION
     call CLOSEFILES
-    pop di
-    pop si
-    pop dx
-    pop cx
-    pop bx
-    pop ax
+    ;pop di
+    ;pop si
+    ;pop dx
+    ;pop cx
+    ;pop bx
+    ;pop ax
     mov ah,4ch
     int 21h
 kod ends
