@@ -34,7 +34,6 @@ dane segment
   error1 db "Too few arguments.",0ah,0dh,"$"
   error2 db "Too much arguments.",0ah,0dh,"$"
   error3 db "Wrong format of arguments.",0ah,0dh,"$"
-  debug db "XD",0ah,0dh,"$"
 dane ends
 
 kod segment
@@ -205,8 +204,12 @@ VARLOAD proc
     mov ax,bx
     mov bx,2d
     mul bx
-    mov si,ds:[argv+ax]
-    mov cx,ds:[arglen+ax]
+    mov di,offset argv
+    add di,ax
+    mov si,ds:[di]
+    mov di,offset arglen
+    add di,ax
+    mov cx,ds:[di]
     mov ds:[sign],0
     xor ax,ax
     xor bx,bx
@@ -233,7 +236,7 @@ VARLOAD proc
     inc si
     loop intpartloop
   floatpart:
-    mov word ptr ds:[calkowita],ax
+    mov ds:[calkowita],ax
     cmp cx,1d
     jbe wrongformat
     inc si
@@ -285,6 +288,7 @@ TOFLOAT proc
   floatloop1:
     fdiv st(0),st(1)
     loop floatloop1
+    fadd st(0),st(2)
     cmp ds:[sign],1
     jne zapiszxmin
     fchs
@@ -301,6 +305,7 @@ TOFLOAT proc
   floatloop2:
     fdiv st(0),st(1)
     loop floatloop2
+    fadd st(0),st(2)
     cmp ds:[sign],1
     jne zapiszxmax
     fchs
@@ -317,6 +322,7 @@ TOFLOAT proc
   floatloop3:
     fdiv st(0),st(1)
     loop floatloop3
+    fadd st(0),st(2)
     cmp ds:[sign],1
     jne zapiszymin
     fchs
@@ -333,6 +339,7 @@ TOFLOAT proc
   floatloop4:
     fdiv st(0),st(1)
     loop floatloop4
+    fadd st(0),st(2)
     cmp ds:[sign],1
     jne zapiszymax
     fchs
@@ -457,34 +464,34 @@ MANDELBROTSET proc
     mov cx,1000d  ;1000 iteracji
   pixelloop:
     ;zmienna tmp
-    fsub st(0),st(0)
-    fadd st(0),st(3)
-    fsub st(0),st(1)
-    fadd st(0),st(7)
-    fxch st(5)
+    fsub st(0),st(0)  ;zerowanie
+    fadd st(0),st(3)  ;st(0)=x*x
+    fsub st(0),st(1)  ;st(0)=x*x-y*y
+    fadd st(0),st(7)  ;st(0)=x*x-y*y+p
+    fxch st(5)  ;st(5)=st(0)
     ;zmienna y
-    fsub st(0),st(0)
-    fadd st(0),st(4)
-    fmul st(0),st(2)
-    fadd st(0),st(0)
-    fadd st(0),st(6)
-    fxch st(2)
+    fsub st(0),st(0)  ;zerowanie
+    fadd st(0),st(4)  ;st(0)=x
+    fmul st(0),st(2)  ;st(0)=x*y
+    fadd st(0),st(0)  ;st(0)=2*x*y
+    fadd st(0),st(6)  ;st(0)=2*x*y + q
+    fxch st(2)  ;st(2)=st(0)
     ;mzmienna y
-    fsub st(0),st(0)
-    fadd st(0),st(5)
-    fxch st(4)
+    fsub st(0),st(0)  ;zerowanie
+    fadd st(0),st(5)  ;st(0)=tmp
+    fxch st(4)  ;st(4)=st(0)
     ;x*x+y*y
-    fsub st(0),st(0)
-    fadd st(0),st(4)
-    fmul st(0),st(0)
-    fxch st(3)
-    fsub st(0),st(0)
-    fadd st(0),st(2)
-    fmul st(0),st(0)
-    fxch st(1)
-    fsub st(0),st(0)
-    fadd st(0),st(3)
-    fadd st(0),st(1)
+    fsub st(0),st(0)  ;zerowanie
+    fadd st(0),st(4)  ;st(0)=x
+    fmul st(0),st(0)  ;st(0)=x*x
+    fxch st(3)  ;st(3)=st(0)
+    fsub st(0),st(0)  ;zerowanie
+    fadd st(0),st(2)  ;st(0)=y
+    fmul st(0),st(0)  ;st(0)=y*y
+    fxch st(1)  ;st(1)=st(0)
+    fsub st(0),st(0)  ;zerowanie
+    fadd st(0),st(3)  ;st(0)=x*x
+    fadd st(0),st(1)  ;st(0)=x*x+y*y
     ;sprawdzamy wynik
     fcom [condition]
     fstsw ax
@@ -510,6 +517,34 @@ MANDELBROTSET proc
     ret
 MANDELBROTSET endp
 ;---------------------------
+PRINTNUM proc
+    push ax
+    push bx
+    push cx
+    push dx
+    xor bx,bx
+    mov bx,10d
+    mov ax,ds:[numtoprint]
+    xor cx,cx
+  printdiv:
+    xor dx,dx
+    div bx
+    push dx
+    inc cx
+    cmp ax,0
+    jne printdiv
+  printit:
+    pop dx
+    add dl,48d
+    mov ah,02h
+    int 21h
+    loop printit
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+PRINTNUM endp
 ;---glowna czesc programu---
   start:
     mov ax,seg dane
